@@ -25,6 +25,7 @@ class ImportCommand extends Command
     protected $entitiesProcessors = [
         'technicians' => 'Technicians',
         'materials' => 'Materials',
+        'beneficiaries' => 'Beneficiaries',
     ];
 
     protected function configure()
