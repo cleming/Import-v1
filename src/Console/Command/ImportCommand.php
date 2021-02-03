@@ -26,6 +26,7 @@ class ImportCommand extends Command
         'technicians' => 'Technicians',
         'materials' => 'Materials',
         'beneficiaries' => 'Beneficiaries',
+        'companies' => 'Companies',
     ];
 
     protected function configure()
