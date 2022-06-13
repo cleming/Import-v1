@@ -7,6 +7,7 @@ use ImportV1\Processor;
 use Robert2\API\Models\Material;
 use Robert2\API\Models\Park;
 use Robert2\API\Models\Category;
+use Robert2\API\Models\SubCategory;
 
 class Materials extends Processor
 {
@@ -27,7 +28,8 @@ class Materials extends Processor
 
         // Added in _preProcess method
         'parkId' => ['type' => 'int', 'field' => 'park_id'],
-        'categoryId' => ['type' => 'int', 'field' => 'category_id']
+        'categoryId' => ['type' => 'int', 'field' => 'category_id'],
+        'subCategoryId' => ['type' => 'int', 'field' => 'sub_category_id'],
     ];
 
     public function __construct()
@@ -69,6 +71,20 @@ class Materials extends Processor
                 $category = $newCategory->edit(null, ['name' => $item['categorie']]);
             }
             $item['categoryId'] = (int)$category->id;
+
+            if ($item['sousCateg'] !== null) {
+                $subcategory = SubCategory::where('name', $item['sousCateg'])->first();
+                if (!$subcategory) {
+                    $newSubcategory = new SubCategory;
+                    $subcategory = $newSubcategory->edit(null, [
+                        'name' => $item['sousCateg'],
+                        'category_id' => $item['categoryId'],
+                    ]);
+                }
+                $item['subCategoryId'] = (int)$subcategory->id;
+            } else {
+                $item['subCategoryId'] = null;
+            }
 
             return $item;
         }, $data);
