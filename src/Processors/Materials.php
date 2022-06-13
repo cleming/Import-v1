@@ -1,33 +1,35 @@
 <?php
 declare(strict_types=1);
 
-namespace Robert2\Scripts\ImportV1\Processors;
+namespace ImportV1\Processors;
 
-use Robert2\Scripts\ImportV1\Processor;
+use ImportV1\Processor;
 use Robert2\API\Models\Material;
 use Robert2\API\Models\Park;
 use Robert2\API\Models\Category;
+use Robert2\API\Models\SubCategory;
 
 class Materials extends Processor
 {
     public $autoFieldsMap = [
-        'id'        => null,
-        'label'     => ['type' => 'string', 'field' => 'name'],
-        'ref'       => ['type' => 'string', 'field' => 'reference'],
-        'panne'     => ['type' => 'int', 'field' => 'out_of_order_quantity'],
-        'externe'   => null,
+        'id' => null,
+        'label' => ['type' => 'string', 'field' => 'name'],
+        'ref' => ['type' => 'string', 'field' => 'reference'],
+        'panne' => ['type' => 'int', 'field' => 'out_of_order_quantity'],
+        'externe' => null,
         'categorie' => null,
         'sousCateg' => null,
-        'Qtotale'   => ['type' => 'int', 'field' => 'stock_quantity'],
-        'tarifLoc'  => ['type' => 'float', 'field' => 'rental_price'],
-        'valRemp'   => ['type' => 'float', 'field' => 'replacement_price'],
+        'Qtotale' => ['type' => 'int', 'field' => 'stock_quantity'],
+        'tarifLoc' => ['type' => 'float', 'field' => 'rental_price'],
+        'valRemp' => ['type' => 'float', 'field' => 'replacement_price'],
         'dateAchat' => null,
-        'ownerExt'  => null,
-        'remarque'  => ['type' => 'string', 'field' => 'note'],
+        'ownerExt' => null,
+        'remarque' => ['type' => 'string', 'field' => 'note'],
 
         // Added in _preProcess method
-        'parkId'     => ['type' => 'int', 'field' => 'park_id'],
-        'categoryId' => ['type' => 'int', 'field' => 'category_id']
+        'parkId' => ['type' => 'int', 'field' => 'park_id'],
+        'categoryId' => ['type' => 'int', 'field' => 'category_id'],
+        'subCategoryId' => ['type' => 'int', 'field' => 'sub_category_id'],
     ];
 
     public function __construct()
@@ -69,6 +71,20 @@ class Materials extends Processor
                 $category = $newCategory->edit(null, ['name' => $item['categorie']]);
             }
             $item['categoryId'] = (int)$category->id;
+
+            if ($item['sousCateg'] !== null) {
+                $subcategory = SubCategory::where('name', $item['sousCateg'])->first();
+                if (!$subcategory) {
+                    $newSubcategory = new SubCategory;
+                    $subcategory = $newSubcategory->edit(null, [
+                        'name' => $item['sousCateg'],
+                        'category_id' => $item['categoryId'],
+                    ]);
+                }
+                $item['subCategoryId'] = (int)$subcategory->id;
+            } else {
+                $item['subCategoryId'] = null;
+            }
 
             return $item;
         }, $data);

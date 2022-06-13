@@ -1,0 +1,17 @@
+#!/usr/bin/env php
+<?php
+declare(strict_types=1);
+
+require_once __DIR__ . '/../../../autoload.php';
+
+// @see https://csv.thephpleague.com/9.0/connections/#os-specificity
+if (!ini_get('auto_detect_line_endings')) {
+    ini_set('auto_detect_line_endings', '1');
+}
+
+// - Obligatoire pour pouvoir instancier les modèles Robert2.
+require_once __DIR__ . '/../../../../src/App/Config/constants.php';
+require_once __DIR__ . '/../../../../src/App/Config/functions.php';
+
+$app = new ImportV1\Application();
+$app->run();

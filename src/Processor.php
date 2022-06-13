@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Robert2\Scripts\ImportV1;
+namespace ImportV1;
 
 class Processor
 {
@@ -39,7 +39,7 @@ class Processor
         return array_map(function ($item) {
             $newItem = [];
             foreach ($item as $field => $value) {
-                if (!$this->autoFieldsMap[$field]) {
+                if (!array_key_exists($field, $this->autoFieldsMap) || empty($this->autoFieldsMap[$field])) {
                     continue;
                 }
 
@@ -68,5 +68,16 @@ class Processor
             }
             return $newItem;
         }, $data);
+    }
+
+    // ------------------------------------------------------
+    // -
+    // -    Méthode à overwriter
+    // -
+    // ------------------------------------------------------
+
+    protected function _preProcess(array $data): array
+    {
+        return $data;
     }
 }

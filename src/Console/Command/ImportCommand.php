@@ -1,18 +1,24 @@
 <?php
 declare(strict_types=1);
 
-namespace Robert2\Scripts\ImportV1;
+namespace ImportV1\Console\Command;
 
-use Symfony\Component\Console\Command\Command as ConsoleCommand;
+use Robert2\API\Errors\ValidationException;
+use Illuminate\Database\Query\Builder as QueryBuilder;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Input\InputArgument;
 
-class Command extends ConsoleCommand
+class ImportCommand extends Command
 {
+    protected const NAME = 'import';
+    protected const DESCRIPTION = "Importe des données depuis la première version de Robert (0.6.x)";
+
     protected $start = 0;
     protected $entity;
+    protected $sourceFile;
     protected $data;
     protected $processor;
 
@@ -20,30 +26,45 @@ class Command extends ConsoleCommand
 
     protected $entitiesProcessors = [
         'technicians' => 'Technicians',
-        'materials'   => 'Materials',
+        'materials' => 'Materials',
+        'beneficiaries' => 'Beneficiaries',
+        'companies' => 'Companies',
     ];
 
     protected function configure()
     {
-        $this->setName('import-v1')
-            ->setDescription('Importe les données depuis la première version de Robert (0.6.x)')
-            ->setHelp('Utilisez cette commande pour importer les données depuis Robert 0.6.x.')
-            ->addOption('start', 's', InputOption::VALUE_OPTIONAL, "Index de la donnée à partir de laquelle vous souhaitez commencer l'import", 0)
-            ->addArgument('entity', InputArgument::REQUIRED, "Nom de l'entité à importer.");
+        $this->setName(static::NAME)
+            ->setDescription(static::DESCRIPTION)
+            ->addArgument('entity', InputArgument::REQUIRED, (
+                "Nom de l'entité à importer. Choix possibles :\n  - " .
+                implode("\n  - ", array_keys($this->entitiesProcessors))
+            ))
+            ->addArgument('source', InputArgument::REQUIRED, (
+                "Le chemin vers le fichier PHP contenant le tableau des données à importer.\n" .
+                "Attention, ce fichier doit retourner un tableau PHP valide !"
+            ))
+            ->addOption(
+                'start',
+                's',
+                InputOption::VALUE_OPTIONAL,
+                "Index à partir duquel vous souhaitez commencer l'import",
+                0
+            );
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->output = $output;
 
         $this->start = (int)$input->getOption('start');
         $this->entity = $input->getArgument('entity');
+        $this->sourceFile = $input->getArgument('source');
 
         $this->checkEntity();
 
         $this->initData();
 
-        $this->out('info', "\Bonjour!\nCommençons l'import de l'entité « $this->entity » vers Robert2.");
+        $this->out('info', "Bonjour!\nCommençons l'import de l'entité « $this->entity » vers Robert2.");
         $startMessage = "Importation de $this->preCount éléments";
         if ($this->start > 0) {
             $startMessage .= ", en débutant à l'index $this->start";
@@ -54,6 +75,7 @@ class Command extends ConsoleCommand
         $this->process();
 
         $this->out('success', "[END] À bientôt !");
+        return Command::SUCCESS;
     }
 
     protected function process()
@@ -76,7 +98,7 @@ class Command extends ConsoleCommand
                 $e->getMessage()
             ));
 
-            if (method_exists($e, 'getValidationErrors')) {
+            if ($e instanceof ValidationException) {
                 $this->out('error', json_encode($e->getValidationErrors(), JSON_PRETTY_PRINT));
             }
 
@@ -91,6 +113,11 @@ class Command extends ConsoleCommand
             }
             exit(1);
         }
+    }
+
+    protected function prepareDatabaseQuery(QueryBuilder $queryBuilder): QueryBuilder
+    {
+        return $queryBuilder;
     }
 
     // ------------------------------------------------------
@@ -113,11 +140,10 @@ class Command extends ConsoleCommand
 
     protected function initData()
     {
-        $fileName = $this->entity . '.php';
-        $filePath = DATA_FOLDER . DS . 'imports' . DS . $fileName;
+        $filePath = $this->sourceFile;
 
         if (!file_exists($filePath)) {
-            $this->out('error', "\ERREUR:\nLe fichier de données de l'entité n'a pas été trouvé. Veuillez créer le fichier:\n`$filePath`");
+            $this->out('error', "\ERREUR:\nLe fichier source spécifié pour les données n'a pas été trouvé.");
             exit(1);
         }
 
@@ -126,7 +152,7 @@ class Command extends ConsoleCommand
             $this->out(
                 'error',
                 "\nERROR:\n" .
-                "<error>Le fichier de données de l'entité existe mais ne semble pas contenir de données.</error>\n" .
+                "<error>Le fichier source des données existe, mais ne semble pas contenir de données.</error>\n" .
                 "<error>Assurez-vous que le fichier retourne directement les données à importer.</error>"
             );
             exit(1);
@@ -138,7 +164,7 @@ class Command extends ConsoleCommand
     protected function initProcessor()
     {
         $processorName = $this->entitiesProcessors[$this->entity];
-        $processorClass = "Robert2\\Scripts\\ImportV1\\Processors\\$processorName";
+        $processorClass = "ImportV1\\Processors\\$processorName";
 
         if (!class_exists($processorClass)) {
             $this->out(
@@ -165,9 +191,9 @@ class Command extends ConsoleCommand
         }
 
         $colors = [
-            'error'   => '1;31', // - Light red
+            'error' => '1;31',   // - Light red
             'warning' => '1;33', // - Light yellow
-            'info'    => '0;36', // - Cyan
+            'info' => '0;36',    // - Cyan
             'success' => '1;32', // - Light green
         ];
 

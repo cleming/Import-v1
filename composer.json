@@ -1,0 +1,30 @@
+{
+    "name": "robert2/import-v1",
+    "description": "Import data from Robert v1 to Robert2 database",
+    "version": "0.1.0",
+    "bin": ["./bin/import-v1"],
+    "authors": [
+        {
+            "name": "Paul Maillardet",
+            "email": "paul@pulsanova.com"
+        },
+        {
+            "name": "Donovan Lambert",
+            "email": "donovan@pulsanova.com"
+        }
+    ],
+    "scripts": {
+        "lint": "./vendor/bin/phpcs -s --colors -p ./src/"
+    },
+    "require": {
+        "symfony/console": "^5.3.2"
+    },
+    "require-dev": {
+        "squizlabs/php_codesniffer": "^3.5.8"
+    },
+    "autoload": {
+        "psr-4": {
+            "ImportV1\\": "src/"
+        }
+    }
+}
