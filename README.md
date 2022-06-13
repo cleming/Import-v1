@@ -35,7 +35,7 @@ composer require "robert2/import-v1:dev-master"
 Vous pouvez lancer les scripts d'import avec la commande suivante :
 
 ```bash
-./src/vendor/bin/import-v1 [...]
+./vendors/bin/import-v1 [...]
 ```
 
 __Note:__ Utilisez `--help` pour obtenir la liste complète des commandes et leurs options.

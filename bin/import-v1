@@ -10,8 +10,8 @@ if (!ini_get('auto_detect_line_endings')) {
 }
 
 // - Obligatoire pour pouvoir instancier les modèles Robert2.
-require_once __DIR__ . '/../../../../App/Config/constants.php';
-require_once __DIR__ . '/../../../../App/Config/functions.php';
+require_once __DIR__ . '/../../../../src/App/Config/constants.php';
+require_once __DIR__ . '/../../../../src/App/Config/functions.php';
 
 $app = new ImportV1\Application();
 $app->run();

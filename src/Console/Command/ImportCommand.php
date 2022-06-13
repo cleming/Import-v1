@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace ImportV1\Console\Command;
 
+use Robert2\API\Errors\ValidationException;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
@@ -34,7 +36,7 @@ class ImportCommand extends Command
         $this->setName(static::NAME)
             ->setDescription(static::DESCRIPTION)
             ->addArgument('entity', InputArgument::REQUIRED, (
-                "Nom de l'entité à importer. Choix possibles :\n" .
+                "Nom de l'entité à importer. Choix possibles :\n  - " .
                 implode("\n  - ", array_keys($this->entitiesProcessors))
             ))
             ->addArgument('source', InputArgument::REQUIRED, (
@@ -50,7 +52,7 @@ class ImportCommand extends Command
             );
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->output = $output;
 
@@ -62,7 +64,7 @@ class ImportCommand extends Command
 
         $this->initData();
 
-        $this->out('info', "\Bonjour!\nCommençons l'import de l'entité « $this->entity » vers Robert2.");
+        $this->out('info', "Bonjour!\nCommençons l'import de l'entité « $this->entity » vers Robert2.");
         $startMessage = "Importation de $this->preCount éléments";
         if ($this->start > 0) {
             $startMessage .= ", en débutant à l'index $this->start";
@@ -73,6 +75,7 @@ class ImportCommand extends Command
         $this->process();
 
         $this->out('success', "[END] À bientôt !");
+        return Command::SUCCESS;
     }
 
     protected function process()
@@ -95,7 +98,7 @@ class ImportCommand extends Command
                 $e->getMessage()
             ));
 
-            if (method_exists($e, 'getValidationErrors')) {
+            if ($e instanceof ValidationException) {
                 $this->out('error', json_encode($e->getValidationErrors(), JSON_PRETTY_PRINT));
             }
 
@@ -110,6 +113,11 @@ class ImportCommand extends Command
             }
             exit(1);
         }
+    }
+
+    protected function prepareDatabaseQuery(QueryBuilder $queryBuilder): QueryBuilder
+    {
+        return $queryBuilder;
     }
 
     // ------------------------------------------------------
