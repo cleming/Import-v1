@@ -1,5 +1,5 @@
 {
-    "name": "robert2/import-v1",
+    "name": "cleming/import-v1",
     "description": "Import data from Robert v1 to Robert2 database",
     "version": "0.1.0",
     "bin": ["./bin/import-v1"],
